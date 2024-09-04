@@ -1,0 +1,1 @@
+nameko run --config amqpBeta.yaml plmService:PLMService
