@@ -9,7 +9,7 @@ from nameko.dependency_providers import DependencyProvider  # type: ignore
 from nameko.rpc import rpc, RpcProxy  # type: ignore
 
 from plmBasic import HandleLog,msgWrapper,MESSAGE,msgJson
-from plmFun import flQtyShelfArt
+from plmFun import flQtyShelfArt,flQtyReq
 
 log = HandleLog('plm-service')
 
@@ -89,7 +89,7 @@ class PLMService(object):
         raise Exception()
 
     @rpc
-    @msgWrapper(ldt=240822,s_func_remark='更新美陈量')
+    @msgWrapper(ldt=240905,s_func_remark='更新美陈量')
     def uQtyShelfArt(self, args):
         j_res =flQtyShelfArt(args)
         log.debug(j_res)
@@ -122,4 +122,9 @@ class PLMService(object):
             message.update({'msg':'条码长度不符'})
         return msgJson(message)
 
-
+    @rpc
+    @msgWrapper(ldt=240907,s_func_remark='更新要货量')
+    def uQtyReq(self, args):
+        j_res =flQtyReq(args)
+        log.debug(j_res)
+        return j_res

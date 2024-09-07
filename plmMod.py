@@ -121,20 +121,40 @@ class FlQtyShelfArt(Base):
     __table_args__ = {'comment': '流水-美陈量'}
 
     id = mapped_column(BIGINT(20), primary_key=True, comment='自增序号')
-    from_code = mapped_column(String(36), comment='来源代码')
+    front_code = mapped_column(String(36), comment='来源代码')
     userid = mapped_column(BIGINT(20), comment='用户ID')
     user_name = mapped_column(String(36), comment='用户名')
-    work_code = mapped_column(String(36), comment='工号')
-    deptid = mapped_column(INTEGER(11), comment='部门ID')
     dept_name = mapped_column(String(36), comment='部门名称')
+    braid = mapped_column(INTEGER(11), comment='门店ID')
     pid = mapped_column(BIGINT(20), comment='商品ID')
     qty_shelf_art_old = mapped_column(INTEGER(11), comment='老美陈量')
     qty_shelf_art_new = mapped_column(INTEGER(11), comment='新美陈量')
+    state = mapped_column(Enum('申请', '确认', '审批中', '完成', '作废', '驳回', '-', ''), server_default=text("''"), comment='状态')
     remark = mapped_column(String(255), server_default=text("''"), comment='备注说明')
-    isapprove = mapped_column(Enum('Y', 'N'), server_default=text("'N'"), comment='是否审批')
     isupdate = mapped_column(Enum('Y', 'N'), server_default=text("'N'"), comment='是否更新')
     cdt = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP'), comment='创建时间')
+    ldt = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'), comment='更新时 间')
 
+
+class FlQtyReq(Base):
+    __tablename__ = 'fl_qty_req'
+    __table_args__ = {'comment': '流水-美陈量'}
+
+    id = mapped_column(BIGINT(20), primary_key=True, comment='自增序号')
+    front_code = mapped_column(String(36), comment='来源代码')
+    userid = mapped_column(BIGINT(20), comment='用户ID')
+    user_name = mapped_column(String(36), comment='用户名')
+    dept_name = mapped_column(String(36), comment='部门名称')
+    braid = mapped_column(INTEGER(11), comment='门店ID')
+    pid = mapped_column(BIGINT(20), comment='商品ID')
+    qty_req = mapped_column(INTEGER(11), comment='要货数量')
+    state = mapped_column(Enum('申请', '确认', '审批中', '完成', '作废', '驳回', '-', ''), server_default=text("''"), comment='状态')
+    remark = mapped_column(String(255), server_default=text("''"), comment='备注说明')
+    isu = mapped_column(Enum('Y', 'N'), server_default=text("'N'"), comment='是否更新')
+    cdt = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP'), comment='创建时间')
+    ldt = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'), comment='更新时 间')
+
+    
 
 class LagDmsDa(Base):
     __tablename__ = 'lag_dms_da'
@@ -409,15 +429,3 @@ class TagLifecycleDa(Base):
     pid = mapped_column(BIGINT(20), primary_key=True, nullable=False, comment='商品ID')
     tag_lifecycle = mapped_column(Enum('导入期', '成长期', '成熟期', '衰退期', '-', ''), nullable=False, comment="商品生命周期 '导入期','成长期','成熟期','衰退期'")
 
-
-class YidaUser(Base):
-    __tablename__ = 'yida_user'
-    __table_args__ = {'comment': '宜搭-用户信息'}
-
-    userid = mapped_column(BIGINT(20), primary_key=True, comment='用户ID')
-    user_name = mapped_column(String(36), comment='用户名')
-    work_code = mapped_column(String(36), comment='工号')
-    deptid = mapped_column(INTEGER(11), comment='部门ID')
-    dept_name = mapped_column(String(36), comment='部门名称')
-    ldt = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'), comment='最后更 新时间')
-    cdt = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP'), comment='创建时间')

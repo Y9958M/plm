@@ -86,14 +86,15 @@ else:
     pass
 
 MESSAGE = {
-    "code": 500,
-    "msg":  '',
+    "content":{"msg":  '',},
     "info":{
         "sid":  SID,
         "project":PROJECT,
         "client":CLIENT,
         "ver":VER,
         "author":'姚鸣'},
+    "errorMsg":"",
+    "success":False
     }
 
 # -*- 把Date、DateTime类型数据转换成兼容Json的格式 -*-  json.dumps(result,cls=DateEncoder.DateEncoder) # 调用自定义类
