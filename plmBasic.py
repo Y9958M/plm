@@ -21,7 +21,7 @@ SID = 5
 
 # 5本机
 if SID == 5:
-    VER = 240814
+    VER = 240909
     CLIENT ="Dev:10.56"
     DB_LINK = {
         'PLM':{
@@ -63,8 +63,8 @@ elif SID == 2:
     }
 #   1生产
 elif SID == 1:
-    VER = 240814
-    CLIENT ="Pro:200.174"
+    VER = 240909
+    CLIENT ="Pro:10.222"
     DB_LINK = {
         'PLM':{
             "USE" : {},

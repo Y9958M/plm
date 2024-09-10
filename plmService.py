@@ -1,15 +1,14 @@
 import time
 import traceback
 import datetime
-import json
 
 from weakref import WeakKeyDictionary
 from eventlet import tpool  # type: ignore
 from nameko.dependency_providers import DependencyProvider  # type: ignore
 from nameko.rpc import rpc, RpcProxy  # type: ignore
 
-from plmBasic import HandleLog,msgWrapper,MESSAGE,msgJson
-from plmFun import flQtyShelfArt,flQtyReq
+from plmBasic import HandleLog,msgWrapper
+from plmFun import flQtyShelfArt,flQtyReq,flReqAudit,flArtAudit
 
 log = HandleLog('plm-service')
 
@@ -92,39 +91,30 @@ class PLMService(object):
     @msgWrapper(ldt=240905,s_func_remark='更新美陈量')
     def uQtyShelfArt(self, args):
         j_res =flQtyShelfArt(args)
+        j_res['params'] = args
         log.debug(j_res)
         return j_res
     
     @rpc
-    @msgWrapper(ldt=240902,s_func_remark='查询商品条码返回编码')
-    def cPrdBarcode(self, args):
-        message = MESSAGE.copy()
-        log.debug(args,'cPrdBarcode 入参')
-        # 输入一个条码或编码 回你一个编码 一码多品 情况下，默认按联营
-        barcode = args.get('barcode','')
-        ln = len(barcode)
-        # permission_braid = args.get('permission_braid',[])
-        # permission_purid = args.get('permission_purid',[])
-        if ln > 5 and ln < 21:
-            res_ym = json.loads(self.YM.cQ({'sqlid':'plm_barcode','barcode':barcode}))
-            ds = res_ym.get('data',{})
-            total = ds.get('total',0)
-            if total > 1:
-                message.update({'msg':'一码多品'})
-            elif total == 1:
-                message.update(ds)
-            elif total == 0:
-                message.update({'msg':'库内无对应条码'})
-            else:
-                message.update({'msg':'异常 结果为负数'})
-            log.debug(res_ym)
-        else:
-            message.update({'msg':'条码长度不符'})
-        return msgJson(message)
-
-    @rpc
     @msgWrapper(ldt=240907,s_func_remark='更新要货量')
     def uQtyReq(self, args):
         j_res =flQtyReq(args)
+        j_res['params'] = args
+        log.debug(j_res)
+        return j_res
+
+    @rpc
+    @msgWrapper(ldt=240910,s_func_remark='审核要货量')
+    def uReqAudit(self, args):
+        j_res =flReqAudit(args)
+        j_res['params'] = args
+        log.debug(j_res)
+        return j_res
+    
+    @rpc
+    @msgWrapper(ldt=240910,s_func_remark='审核货架美陈量')
+    def uArtAudit(self, args):
+        j_res =flArtAudit(args)
+        j_res['params'] = args
         log.debug(j_res)
         return j_res
