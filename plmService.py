@@ -8,7 +8,7 @@ from nameko.dependency_providers import DependencyProvider  # type: ignore
 from nameko.rpc import rpc, RpcProxy  # type: ignore
 
 from plmBasic import HandleLog,msgWrapper
-from plmFun import flQtyShelfArt,flQtyReq,flReqAudit,flArtAudit
+from plmFun import flQtyReqInsert,flQtyReqEdit,flQtyReqAudit,flQtyArtInsert,flQtyArtEdit,flQtyArtAudit
 
 log = HandleLog('plm-service')
 
@@ -79,42 +79,59 @@ class PLMService(object):
             if time.time() - start > 300:
                 break
 
-    @rpc
-    def computation_bound_tpool(self):
-        return tpool.execute(some_fun_you_can_not_control)
+    # @rpc
+    # def computation_bound_tpool(self):
+    #     return tpool.execute(some_fun_you_can_not_control)
 
     @rpc
     def raise_exception(self):
         raise Exception()
 
+
     @rpc
-    @msgWrapper(ldt=240905,s_func_remark='更新美陈量')
-    def uQtyShelfArt(self, args):
-        j_res =flQtyShelfArt(args)
-        j_res['params'] = args
-        log.debug(j_res)
-        return j_res
-    
-    @rpc
-    @msgWrapper(ldt=240907,s_func_remark='更新要货量')
-    def uQtyReq(self, args):
-        j_res =flQtyReq(args)
+    @msgWrapper(ldt=240907,s_func_remark='插入 要货量')
+    def uQtyReqInsert(self, args):
+        j_res =flQtyReqInsert(args)
         j_res['params'] = args
         log.debug(j_res)
         return j_res
 
     @rpc
-    @msgWrapper(ldt=240910,s_func_remark='审核要货量')
-    def uReqAudit(self, args):
-        j_res =flReqAudit(args)
+    @msgWrapper(ldt=240907,s_func_remark='修改 要货量')
+    def uQtyReqEdit(self, args):
+        j_res =flQtyReqEdit(args)
         j_res['params'] = args
         log.debug(j_res)
         return j_res
     
     @rpc
-    @msgWrapper(ldt=240910,s_func_remark='审核货架美陈量')
-    def uArtAudit(self, args):
-        j_res =flArtAudit(args)
+    @msgWrapper(ldt=240910,s_func_remark='审核 要货量')
+    def uQtyReqAudit(self, args):
+        j_res =flQtyReqAudit(args)
+        j_res['params'] = args
+        log.debug(j_res)
+        return j_res
+    
+    @rpc
+    @msgWrapper(ldt=240905,s_func_remark='插入 美陈量')
+    def uQtyArtInsert(self, args):
+        j_res =flQtyArtInsert(args)
+        j_res['params'] = args
+        log.debug(j_res)
+        return j_res
+    
+    @rpc
+    @msgWrapper(ldt=240905,s_func_remark='更新 美陈量')
+    def uQtyArtEdit(self, args):
+        j_res =flQtyArtEdit(args)
+        j_res['params'] = args
+        log.debug(j_res)
+        return j_res
+    
+    @rpc
+    @msgWrapper(ldt=240910,s_func_remark='审核 美陈量')
+    def uQtyArtAudit(self, args):
+        j_res =flQtyArtAudit(args)
         j_res['params'] = args
         log.debug(j_res)
         return j_res

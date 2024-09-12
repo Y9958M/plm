@@ -22,21 +22,23 @@ metadata = Base.metadata
 class BookPrdAbcLm(Base):
     __tablename__ = 'book_prd_abc_lm'
     __table_args__ = (
-        Index('_idx', 'pid'),
+        Index('_idx', 'braid', 'pid'),
         {'comment': '预设-市场-商品属性'}
     )
 
+    braid = mapped_column(INTEGER(11), nullable=False, server_default=text("'0'"), comment='门店ID')
     pid = mapped_column(BIGINT(18), nullable=False, comment='编码ID')
+    pkg_dist = mapped_column(DECIMAL(10, 3), nullable=False, server_default=text("'1.000'"), comment='配送包装率')
     lv_abc = mapped_column(String(36), nullable=False, server_default=text("''"), comment='ABC等级')
+    qty_shelf_art = mapped_column(INTEGER(11), nullable=False, server_default=text("'1'"), comment='最小安全量')
+    remark = mapped_column(String(36), nullable=False, comment='备注')
     from_code = mapped_column(String(36), nullable=False, comment='来源代码')
     ds_begin = mapped_column(Date, nullable=False, comment='开始日期')
     ds_end = mapped_column(Date, nullable=False, comment='结束日期')
     sid = mapped_column(TINYINT(4), nullable=False, server_default=text("'0'"), comment='环境标识')
     id = mapped_column(BIGINT(20), primary_key=True, comment='序号')
     ldt = mapped_column(DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'), comment='最后更新时间')
-    cdt = mapped_column(DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP'), comment='创建时间')
-    qty_shelf_art = mapped_column(INTEGER(11), server_default=text("'0'"), comment='最小安全量')
-    pkg_dist = mapped_column(DECIMAL(10, 3), server_default=text("'1.000'"), comment='配送包装率')
+    cdt = mapped_column(DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP'), comment='创建时间')    
 
 
 t_category_v = Table(
@@ -118,43 +120,51 @@ class ErpPrdDa(Base):
 
 class FlQtyShelfArt(Base):
     __tablename__ = 'fl_qty_shelf_art'
-    __table_args__ = {'comment': '流水-美陈量'}
+    __table_args__ = (
+        Index('_bp', 'braid', 'pid'),
+        Index('_state', 'state'),
+        {'comment': '流水-美陈量'}
+    )
 
     id = mapped_column(BIGINT(20), primary_key=True, comment='自增序号')
     front_code = mapped_column(String(36), comment='来源代码')
-    userid = mapped_column(BIGINT(20), comment='用户ID')
-    user_name = mapped_column(String(36), comment='用户名')
-    dept_name = mapped_column(String(36), comment='部门名称')
     braid = mapped_column(INTEGER(11), comment='门店ID')
     pid = mapped_column(BIGINT(20), comment='商品ID')
     qty_shelf_art_old = mapped_column(INTEGER(11), comment='老美陈量')
     qty_shelf_art_new = mapped_column(INTEGER(11), comment='新美陈量')
-    state = mapped_column(Enum('申请', '确认', '审批中', '完成', '作废', '驳回', '-', ''), server_default=text("''"), comment='状态')
+    state = mapped_column(Enum('申请', '确认', '完成', '作废', '驳回', '-', ''), server_default=text("''"), comment="状 态 '申请','确认','完成','作废','驳回','-',''")
     remark = mapped_column(String(255), server_default=text("''"), comment='备注说明')
-    isupdate = mapped_column(Enum('Y', 'N'), server_default=text("'N'"), comment='是否更新')
+    isu = mapped_column(Enum('Y', 'N'), server_default=text("'N'"), comment='是否更新')
     cdt = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP'), comment='创建时间')
+    empid_cdt = mapped_column(BIGINT(18))
+    emp_name_cdt = mapped_column(String(36), comment='创建人')
     ldt = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'), comment='更新时 间')
+    emp_name_ldt = mapped_column(String(36), comment='最后更新人')
 
 
 class FlQtyReq(Base):
     __tablename__ = 'fl_qty_req'
-    __table_args__ = {'comment': '流水-美陈量'}
+    __table_args__ = (
+        Index('_bp', 'braid', 'pid'),
+        Index('_state', 'state'),
+        {'comment': '流水-要货明细'}
+    )
 
     id = mapped_column(BIGINT(20), primary_key=True, comment='自增序号')
-    ds_validity = mapped_column(Date, comment='有效日期')
     front_code = mapped_column(String(36), comment='来源代码')
-    dept_name = mapped_column(String(36), comment='部门名称')
+    ds_validity = mapped_column(Date, comment='有效日期')
     braid = mapped_column(INTEGER(11), comment='门店ID')
-    userid = mapped_column(BIGINT(20), comment='用户ID')
-    user_name = mapped_column(String(36), comment='用户名')
     pid = mapped_column(BIGINT(20), comment='商品ID')
     qty_req = mapped_column(INTEGER(11), comment='要货数量')
     state = mapped_column(Enum('申请', '确认', '完成', '作废', '驳回', '-', ''), server_default=text("''"), comment="状 态 '申请','确认','完成','作废','驳回','-',''")
     remark = mapped_column(String(255), server_default=text("''"), comment='备注说明')
     isu = mapped_column(Enum('Y', 'N'), server_default=text("'N'"), comment='是否更新')
     cdt = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP'), comment='创建时间')
+    empid_cdt = mapped_column(BIGINT(20), comment='用户ID')
+    emp_name_cdt = mapped_column(String(36), comment='创建人')
     ldt = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'), comment='更新时 间')
-    
+    emp_name_ldt = mapped_column(String(36), comment='最后更新人')
+
 
 class LagDmsDa(Base):
     __tablename__ = 'lag_dms_da'

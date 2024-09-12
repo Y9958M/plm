@@ -72,7 +72,7 @@ elif SID == 1:
             "HOST": "192.168.10.222",
             "PORT": 3306,
             "USER": "root",
-            "PWD": "shtm2022",
+            "PWD": "shtm2023",
         },
         'REDIS': {
             "DB": SID,
