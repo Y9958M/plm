@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from plmBasic import MESSAGE, HandleLog, engine
 
-from plmMod import (FlQtyShelfArt,FlQtyReq,SetBraprdDi)
+from plmMod import (FlQtyShelfArt,FlQtyReq)
 
 log = HandleLog(__name__,i_c_level=10,i_f_level=20)
 
@@ -18,6 +18,7 @@ def flQtyReqInsert(j_args)-> dict:
     log.debug(f">>> {message['info']['fun']} 存入 更新要货数量 信息 {j_args}")
 
     qty_req = j_args.get('qty_req',-99)
+    td = date.today().strftime('%Y-%m-%d')
     if isinstance(qty_req,int):
         if qty_req <0 or qty_req > 999999:
             message['errorMsg'] = f'申请数量不对 {qty_req} '
@@ -29,7 +30,7 @@ def flQtyReqInsert(j_args)-> dict:
     try:
         se = Session(engine())
         stmt = select(FlQtyReq).where(FlQtyReq.state.in_(['申请','确认','']))\
-            .where(FlQtyReq.pid == j_args.get('pid',0)).where(FlQtyReq.braid == j_args.get('braid',0))
+            .where(FlQtyReq.pid == j_args.get('pid',0)).where(FlQtyReq.braid == j_args.get('braid',0)).where(FlQtyReq.ds_validity == td)
         se_req = se.scalars(stmt).first()
     except Exception as e:
         message['errorMsg'] = str(e)
@@ -38,7 +39,7 @@ def flQtyReqInsert(j_args)-> dict:
     if se_req:
         try: # 员工可以可接更新要货量
             se_req.qty_req = j_args.get('qty_req',-99)
-            se_req.ds_validity = date.today().strftime('%Y-%m-%d')
+            se_req.ds_validity = td
             se_req.remark = j_args.get('remark','')
             se_req.emp_name_ldt = j_args.get('user_name'),
             se.commit()
@@ -49,7 +50,7 @@ def flQtyReqInsert(j_args)-> dict:
     else:
         si = insert(FlQtyReq).values(
             front_code = j_args.get('front_code'),
-            ds_validity = date.today().strftime('%Y-%m-%d'),
+            ds_validity = td,
             empid_cdt = j_args.get('userid'),
             emp_name_cdt = j_args.get('user_name'),
             pid = j_args.get('pid'),
