@@ -12,7 +12,7 @@
 # sqlacodegen_v2 --generator declarative mysql+pymysql://root:4197@localhost:3310/plm --tables common_query
 
 from sqlalchemy import CHAR, Column, Computed, DECIMAL, Date, DateTime, Enum, Index, String, Table, text
-from sqlalchemy.dialects.mysql import BIGINT, INTEGER, SMALLINT, TINYINT
+from sqlalchemy.dialects.mysql import BIGINT, INTEGER, SMALLINT, TINYINT,JSON
 from sqlalchemy.orm import Mapped, declarative_base, mapped_column
 from sqlalchemy.orm.base import Mapped
 Base = declarative_base()
@@ -309,18 +309,24 @@ class SetBraprdDi(Base):
     dcid = mapped_column(INTEGER(11), nullable=False, server_default=text("'0'"), comment='配送部门ID')
     supid = mapped_column(BIGINT(20), nullable=False, server_default=text("'0'"), comment='供应商ID')
     pid = mapped_column(BIGINT(20), nullable=False, comment='商品ID')
-    model = mapped_column(Enum('工业品', '生鲜', '日清', '小百货', '散称', '短保', '服饰', '-', ''), nullable=False, server_default=text("''"), comment="模式 '工业品','生鲜','日清','小百货','散称','短保'")
+    model = mapped_column(Enum('工业品', '粮油', '生鲜', '日清', '小百货', '散称', '短保', '服饰', '-', ''), nullable=False, server_default=text("''"), comment="模式 '工业品','生鲜','日清','小百货','散称','短保'")
     sign_opl = mapped_column(INTEGER(11), nullable=False, server_default=text("'0'"), comment='补货标识1手工，2自动')
-    pkg_sup = mapped_column(INTEGER(11), nullable=False, server_default=text("'0'"), comment='供应商整件数量')
-    pkg_dist = mapped_column(INTEGER(11), nullable=False, server_default=text("'0'"), comment='配送整件数量')
+    pkg_sup = mapped_column(DECIMAL(12, 3), nullable=False, server_default=text("'0.000'"), comment='供应商整件数量')
+    pkg_dist = mapped_column(DECIMAL(12, 3), nullable=False, server_default=text("'0.000'"), comment='配送整件数量')
     qty_shelf_art = mapped_column(DECIMAL(12, 3), nullable=False, server_default=text("'0.000'"), comment='货架美陈量')
     qty_shelf_max = mapped_column(DECIMAL(12, 3), nullable=False, server_default=text("'0.000'"), comment='货架满陈量')
     iscovered = mapped_column(Enum('Y', 'N'), nullable=False, server_default=text("'Y'"), comment='是否覆盖')
     remark = mapped_column(String(255), nullable=False, server_default=text("''"), comment='备注')
-    sid = mapped_column(TINYINT(1), nullable=False, server_default=text("'0'"), comment='数据标识 0不生效，1生效，2 测试，3假删除')
+    shelf_code = mapped_column(String(36), nullable=False, server_default=text("''"), comment='货架码')
+    shelf_type = mapped_column(String(36), comment='货架类型')
+    shelf_deep = mapped_column(INTEGER(11), comment='货架深')
+    shelf_stack = mapped_column(INTEGER(11), comment='货架堆叠层数')
+    shelf_vertical = mapped_column(INTEGER(11), comment='陈列几层')
+    shelf_count = mapped_column(INTEGER(11), comment='单层排面数')
+    qty_shelf = mapped_column(INTEGER(11), Computed('((((`shelf_vertical` * `shelf_count`) * `shelf_stack`) * `shelf_deep`))', persisted=False), comment='基础排面量')
     id = mapped_column(BIGINT(20), primary_key=True, comment='序号ID')
+    sid = mapped_column(TINYINT(1), nullable=False, server_default=text("'0'"), comment='数据标识 0不生效，1生效，2 测试，3假删除')
     ldt = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'), comment='最后更 新时间')
-
 
 class SetCategoryLm(Base):
     __tablename__ = 'set_category_lm'
@@ -353,8 +359,9 @@ class SetMatrxM(Base):
     __tablename__ = 'set_matrx_m'
     __table_args__ = {'comment': '设置-算法矩阵'}
 
+    braid = mapped_column(INTEGER(11), nullable=False, server_default=text("'100'"), comment='门店 100总部 ')
     scenario = mapped_column(Enum('配送', '采购', '直流', '-', ''), nullable=False, comment='ERP业务场景')
-    model = mapped_column(Enum('工业品', '生鲜', '日清', '小百货', '散称', '短保', '服饰', '-', ''), nullable=False, comment="算量模式 '工业品','生鲜','日清','小百货','散称','短保'")
+    model = mapped_column(Enum('工业品', '粮油', '生鲜', '日清', '小百货', '散称', '短保', '服饰', '-', ''), nullable=False, comment="算量模式 '工业品','生鲜','日清','小百货','散称','短保'")
     level = mapped_column(Enum('主销', '畅销', '普销', '慢销', '滞销', '分货', '报货', '-', ''), nullable=False, comment="算量等级 '主销','畅销','普销','慢销','滞销','分货','报货'")
     days_interval = mapped_column(INTEGER(3), nullable=False, server_default=text("'0'"), comment='下单到收货的间隔天数T+N')
     formula_trigger = mapped_column(Enum('YES', 'NO', '安全量', '大仓量', '货架量', '报货量', '-', ''), nullable=False, comment="触发公式 'YES','NO','安全量','大仓量','货架量'")
@@ -371,7 +378,12 @@ class SetMatrxM(Base):
 
 class SetPrdDi(Base):
     __tablename__ = 'set_prd_di'
-    __table_args__ = {'comment': '设置-商品清单'}
+    __table_args__ = (
+        Index('_idx_brand', 'brand_name'),
+        Index('_idx_cid', 'cid'),
+        Index('_idx_name', 'prd_name'),
+        {'comment': '设置-商品清单'}
+    )
 
     cid = mapped_column(INTEGER(11), nullable=False, server_default=text("'-99'"), comment='类目ID')
     pid = mapped_column(BIGINT(18), primary_key=True, comment='商品ID')
@@ -390,11 +402,16 @@ class SetPrdDi(Base):
     price_pur_ld = mapped_column(DECIMAL(18, 6), nullable=False, server_default=text("'-99.000000'"), comment='最近进价')
     dio_safe_ref = mapped_column(INTEGER(11), nullable=False, server_default=text("'0'"), comment='参考安全周转天数(门店售卖时间)')
     pkg_dist_ref = mapped_column(DECIMAL(11, 3), nullable=False, server_default=text("'1.000'"), comment='参考配送数量')
-    tag_abc = mapped_column(Enum('A', 'B', 'C', '-', ''), nullable=False, comment='ABC标签')
     remark = mapped_column(String(255), nullable=False, server_default=text("''"), comment='备注')
     sid = mapped_column(SMALLINT(6), nullable=False, server_default=text("'0'"), comment='数据标识 0不生效 1生产 2测试 3作废')
     ldt = mapped_column(DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'), comment='最后更新时间')
-
+    qty_art_ref = mapped_column(DECIMAL(11, 3), comment='参考陈列量')
+    tag_abc = mapped_column(String(36), comment='ABC标签')
+    shelf_deep_ref = mapped_column(INTEGER(11), server_default=text("'1'"), comment='货架深')
+    shelf_count_ref = mapped_column(INTEGER(11), comment='单层排面数')
+    shelf_stack_ref = mapped_column(INTEGER(11), comment='货架堆叠层数')
+    shelf_vertical_ref = mapped_column(INTEGER(11), comment='陈列几层')
+    qty_shelf_ref = mapped_column(INTEGER(11), Computed('((((`shelf_deep_ref` * `shelf_count_ref`) * `shelf_stack_ref`) * `shelf_vertical_ref`))', persisted=False), comment='陈列量')
 
 class SetRouterM(Base):
     __tablename__ = 'set_router_m'
@@ -439,3 +456,17 @@ class TagLifecycleDa(Base):
     pid = mapped_column(BIGINT(20), primary_key=True, nullable=False, comment='商品ID')
     tag_lifecycle = mapped_column(Enum('导入期', '成长期', '成熟期', '衰退期', '-', ''), nullable=False, comment="商品生命周期 '导入期','成长期','成熟期','衰退期'")
 
+
+class LogsPlm(Base):
+    __tablename__ = 'logs_plm'
+    __table_args__ = (
+        Index('_idx', 'key_code'),
+        {'comment': '日志-操作'}
+    )
+
+    key_code = mapped_column(String(36), nullable=False, server_default=text("'0'"), comment='关键字代码')
+    args_in = mapped_column(JSON, nullable=False, comment='入参')
+    args_out = mapped_column(JSON, nullable=False, comment='出参')
+    id = mapped_column(BIGINT(20), primary_key=True, comment='自增序号')
+    front_code = mapped_column(String(36), comment='来源代码')
+    ldt = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'), comment='更新时 间')

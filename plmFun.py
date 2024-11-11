@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from plmBasic import MESSAGE, HandleLog, engine
 
-from plmMod import (FlQtyShelfArt,FlQtyReq)
+from plmMod import (FlQtyShelfArt,FlQtyReq,SetPrdDi,SetBraprdDi)
 
 log = HandleLog(__name__,i_c_level=10,i_f_level=20)
 
@@ -293,7 +293,9 @@ def flQtyArtAudit(j_args)-> dict:
     WHERE b.state = '确认' AND a.iscovered = 'Y'
     """
                     conn.exec_driver_sql(s_sql)
+                    
             message['success'] = True
+
             if i_cnt == 1:
                 for a in se_art_audit:
                     message['msg'] = f"{a.braid} {a.pid} {s_state} 成功"
@@ -308,3 +310,101 @@ def flQtyArtAudit(j_args)-> dict:
         message['success'] = True
         message['msg'] = f'无 {s_state} 明细 请重新查询'
         return message
+    
+
+def pkg2Edit(j_args)-> dict:
+    message = MESSAGE.copy()
+    message['info']['fun'] = 'pkg2Edit'
+    log.debug(f">>> {message['info']['fun']} 存入 修改 中包装 数量 信息 {j_args} ")
+
+    pid = j_args.get('pid',-99)
+    pkg_dist = j_args.get('pkg_dist',-99)
+    pkg_dist_old = j_args.get('pkg_dist_old',-99)
+    pkg_sup = j_args.get('pkg_sup',-99)
+    emp_name = j_args.get('user_name','')
+    # 检查下 不能大于供应商包装
+    if pkg_dist < 0:
+        message['errorMsg'] = f'配送包装数 {pkg_dist} 异常'
+        log.warning(message['errorMsg'])
+        return message
+    if pkg_dist_old < 0:
+        message['errorMsg'] = f'原 配送包装数 {pkg_dist_old} 异常'
+        log.warning(message['errorMsg'])
+        return message
+    elif pkg_sup < 0 :
+        message['errorMsg'] = f'供应商包装数 {pkg_sup} 异常'
+        log.warning(message['errorMsg'])
+        return message  
+    elif pkg_dist > pkg_sup:
+        message['errorMsg'] = f'{pkg_dist} 不能大于供应商包装数 {pkg_sup}'
+        return message
+    elif pid < 0 :
+        message['errorMsg'] = f'商品ID {pid} 异常'
+        log.warning(message['errorMsg'])
+        return message  
+    else:
+        pass
+    # 更新 门店配置表
+    try:
+        se = Session(engine())
+        update_stmt = update(SetBraprdDi).where(SetBraprdDi.pid == pid).where(SetBraprdDi.iscovered == 'Y')\
+            .values(pkg_dist = pkg_dist,remark= f"配送包装 由 {emp_name} 从 {pkg_dist_old} 到 {pkg_dist}")
+        se.execute(update_stmt)
+
+        update_stmt = update(SetPrdDi).where(SetPrdDi.pid == pid)\
+            .values(pkg_dist_ref = pkg_dist,remark= f"配送包装 由 {emp_name} 从 {pkg_dist_old} 到 {pkg_dist}")
+        se.execute(update_stmt)
+        se.commit()
+    except Exception as e:
+        message['errorMsg'] = str(e)
+        log.warning(message,'更新异常')
+        return message
+    
+    # # 记录到日志中
+    # si = insert(LogsPlm).values(
+    #     front_code = j_args.get('front_code'),
+    #     key_code = 'pkg_dist',
+    #     args_in = j_args,
+    #     args_out = message)
+        
+    # try:
+    #     se.execute(si)
+    #     se.commit()
+    # except Exception as e:
+    #     message['errorMsg'] = str(e)
+    #     log.warning(message,'插入异常')
+    #     return message
+
+    message['success'] = True
+    message['msg'] = f'{pid} 更新 {pkg_dist} 成功'
+    return message
+
+
+def uSetBraPrdMain(j_args)-> dict:
+    message = MESSAGE.copy()
+    message['info']['fun'] = 'uSetBraPrdMain'
+    log.debug(f">>> {message['info']['fun']} 更新货架基础排面量 信息 {j_args}")
+
+    se = Session(engine())
+    obj = se.query(SetBraprdDi).filter_by(id=j_args.get('id','')).first()
+    if i := j_args.get('shelf_deep',0):
+        obj.shelf_deep = i
+    if i := j_args.get('shelf_count',0):
+        obj.shelf_count = i
+    if i := j_args.get('shelf_stack',0):
+        obj.shelf_stack = i
+    if i := j_args.get('shelf_vertical',0):
+        obj.shelf_vertical = i
+    if i := j_args.get('qty_shelf_art',0):
+        obj.qty_shelf_art = i
+    if s := j_args.get('shelf_type',''):
+        obj.shelf_type = s
+    se.commit()
+    se.close()
+
+    message['msg'] = "更新 成功"
+    message['success'] = True    
+    return message
+
+
+

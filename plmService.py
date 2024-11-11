@@ -3,12 +3,12 @@ import traceback
 import datetime
 
 from weakref import WeakKeyDictionary
-from eventlet import tpool  # type: ignore
+# from eventlet import tpool  # type: ignore
 from nameko.dependency_providers import DependencyProvider  # type: ignore
 from nameko.rpc import rpc, RpcProxy  # type: ignore
 
-from plmBasic import HandleLog,msgWrapper
-from plmFun import flQtyReqInsert,flQtyReqEdit,flQtyReqAudit,flQtyArtInsert,flQtyArtEdit,flQtyArtAudit
+from plmBasic import HandleLog,msgWrapper,threadLogs
+from plmFun import flQtyReqInsert,flQtyReqEdit,flQtyReqAudit,flQtyArtInsert,flQtyArtEdit,flQtyArtAudit,pkg2Edit,uSetBraPrdMain
 
 log = HandleLog('plm-service')
 
@@ -51,7 +51,7 @@ def some_fun_you_can_not_control():
 
 class PLMService(object):
     log = LoggingDependency()
-    name = "PLM"              # 定义微服务名称 
+    name = "PLM"              # 定义微服务名称 API做解析 类型检查 PLM做逻辑判断和
     YM = RpcProxy("YM")
 
     @rpc
@@ -132,6 +132,26 @@ class PLMService(object):
     @msgWrapper(ldt=240910,s_func_remark='审核 美陈量')
     def uQtyArtAudit(self, args):
         j_res =flQtyArtAudit(args)
+        j_res['params'] = args
+        log.debug(j_res)
+        return j_res
+    
+    @rpc
+    @msgWrapper(ldt=241012,s_func_remark='更新 中包量')
+    def uPkg2Edit(self, args):
+        j_res =pkg2Edit(args)
+        logs = threadLogs(from_code=args.get('front_code',''), key_code='pkg_dist',args_in= args,args_out= j_res)
+        logs.start()
+        j_res['params'] = args
+        log.debug(j_res)
+        return j_res
+    
+    @rpc
+    @msgWrapper(ldt=241109,s_func_remark='更新 基础陈列量')
+    def uBraPrdShelf(self, args):
+        j_res =uSetBraPrdMain(args)
+        logs = threadLogs(from_code=args.get('front_code',''), key_code='shelf',args_in= args,args_out= j_res)
+        logs.start()
         j_res['params'] = args
         log.debug(j_res)
         return j_res

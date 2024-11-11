@@ -7,6 +7,7 @@ import json
 import decimal
 import redis
 import sqlalchemy
+import threading
 from datetime import datetime,date
 from sqlalchemy.pool import QueuePool
 from logging.handlers import RotatingFileHandler
@@ -238,3 +239,32 @@ class HandleLog:
     def cri(self,message,title=''):
         self.logger.critical(f"{title}:{message}" if title else message)
 
+
+# 要区分一下 查询 JOB 单据 job_custom_logs 
+class threadLogs(threading.Thread):
+    def __init__(self,from_code:str,key_code:str,args_in={},args_out={}):
+        threading.Thread.__init__(self)
+        self.from_code = from_code
+        self.key_code = key_code
+        self.args_in = args_in
+        self.args_out = args_out
+        
+    def run(self):
+        from_code = self.from_code
+        key_code = self.key_code
+
+        time.sleep(3)
+        conn = engine().connect()
+        try:
+            args_in = self.args_in
+            args_out = self.args_out
+
+            if from_code in ['commonQuery'] and 'data' in args_out:
+                if 'datalist' in args_out['data']:
+                    args_out['tip'] ="3s del data_list!"
+                    del args_out['data']['datalist']
+            conn.exec_driver_sql("insert into logs_plm(from_code,key_code,args_in,args_out)values(%s,%s,%s,%s)",(from_code,key_code,msgJson(args_in),msgJson(args_out)))
+            conn.commit()
+
+        except Exception as e:
+            print("threadLogs",e)
