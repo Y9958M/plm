@@ -8,7 +8,7 @@ from nameko.dependency_providers import DependencyProvider  # type: ignore
 from nameko.rpc import rpc, RpcProxy  # type: ignore
 
 from plmBasic import HandleLog,msgWrapper,threadLogs
-from plmFun import flQtyReqInsert,flQtyReqEdit,flQtyReqAudit,flQtyArtInsert,flQtyArtEdit,flQtyArtAudit,pkg2Edit,uSetBraPrdMain
+from plmFun import flQtyReqInsert,flQtyReqEdit,flQtyReqAudit,flQtyArtInsert,flQtyArtEdit,flQtyArtAudit,pkg2Edit,uSetBraPrdMain,uSetShelf2CMain
 
 log = HandleLog('plm-service')
 
@@ -151,6 +151,16 @@ class PLMService(object):
     def uBraPrdShelf(self, args):
         j_res =uSetBraPrdMain(args)
         logs = threadLogs(from_code=args.get('front_code',''), key_code='shelf',args_in= args,args_out= j_res)
+        logs.start()
+        j_res['params'] = args
+        log.debug(j_res)
+        return j_res
+    
+    @rpc
+    @msgWrapper(ldt=250225,s_func_remark='更新 插入 货架对应品类群')
+    def uShelf2C(self, args):
+        j_res =uSetShelf2CMain(args)
+        logs = threadLogs(from_code=args.get('front_code',''), key_code='shelf2c',args_in= args,args_out= j_res)
         logs.start()
         j_res['params'] = args
         log.debug(j_res)

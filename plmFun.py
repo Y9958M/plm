@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from plmBasic import MESSAGE, HandleLog, engine
 
-from plmMod import (FlQtyShelfArt,FlQtyReq,SetPrdDi,SetBraprdDi)
+from plmMod import (FlQtyShelfArt,FlQtyReq,SetPrdDi,SetBraprdDi,Shelf2Cid)
 
 log = HandleLog(__name__,i_c_level=10,i_f_level=20)
 
@@ -406,5 +406,31 @@ def uSetBraPrdMain(j_args)-> dict:
     message['success'] = True    
     return message
 
+def uSetShelf2CMain(j_args)-> dict:
+    message = MESSAGE.copy()
+    message['info']['fun'] = 'uSetShelf2CMain'
+    log.debug(f">>> {message['info']['fun']} 更新货架对应品类群 入参 {j_args}") 
 
+    se = Session(engine())
+    shelf_code = j_args.get('shelf_code', '')   # 货架号
+    cid = j_args.get('cateid', 0)    # 品类群
+    try:    # 查询是否存在相同的货架号和品类群的记录
+        obj = se.query(Shelf2Cid).filter_by(shelf_code = shelf_code,cid = cid).first()
+        if obj:    # 如果不存在，则插入新记录
+            obj.shelf_code = shelf_code
+            obj.cid = cid
+            message['msg'] = f"更新 货架号 {shelf_code}，品类群 {cid}"            
+        else:
+            se.add(Shelf2Cid(shelf_code=shelf_code, cid=cid))
+            message['msg'] = f"已存在 货架号 {shelf_code}，品类群 {cid}"
+        se.commit() # 提交事务
+    except Exception as e:  # 发生异常时回滚事务
+        se.rollback()
+        log.error(f"操作失败：{e}")
+        message['errorMsg'] = str(e)
+        return message
+    finally:    # 关闭会话
+        se.close()
+    message['success'] = True    
+    return message
 

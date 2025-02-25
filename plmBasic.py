@@ -29,9 +29,9 @@ if SID == 5:
             "USE" : {},
             "TYPE": "MYSQL",
             "HOST": "127.0.0.1",
-            "PORT": 3310,
+            "PORT": 3306,
             "USER": "root",
-            "PWD": "4197",
+            "PWD": "7463197",
         },
         'REDIS': {
             "DB": SID,

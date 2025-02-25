@@ -10,10 +10,12 @@
 # Base.metadata.create_all(engine)
 
 # sqlacodegen_v2 --generator declarative mysql+pymysql://root:4197@localhost:3310/plm --tables common_query
+# sqlacodegen_v2 --generator declarative mysql+pymysql://root:7463197@localhost:3306/plm --tables ct_shelf2cid_api
 
-from sqlalchemy import CHAR, Column, Computed, DECIMAL, Date, DateTime, Enum, Index, String, Table, text
-from sqlalchemy.dialects.mysql import BIGINT, INTEGER, SMALLINT, TINYINT,JSON
-from sqlalchemy.orm import Mapped, declarative_base, mapped_column
+
+from sqlalchemy import CHAR, Column, Computed, DECIMAL, Date, DateTime, Enum, Index, String, Table, text,Integer
+from sqlalchemy.dialects.mysql import BIGINT,VARCHAR, INTEGER, SMALLINT, TINYINT,JSON
+from sqlalchemy.orm import declarative_base, mapped_column
 from sqlalchemy.orm.base import Mapped
 Base = declarative_base()
 metadata = Base.metadata
@@ -470,3 +472,11 @@ class LogsPlm(Base):
     id = mapped_column(BIGINT(20), primary_key=True, comment='自增序号')
     front_code = mapped_column(String(36), comment='来源代码')
     ldt = mapped_column(DateTime, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'), comment='更新时 间')
+
+
+class Shelf2Cid(Base):
+    __tablename__ = 'ct_shelf2cid_api'
+    __table_args__ = {'comment': '对照-货架对应品类群'}
+
+    shelf_code = mapped_column(VARCHAR(36), primary_key=True, nullable=False, comment='货架码')
+    cid = mapped_column(INTEGER, primary_key=True, nullable=False, comment='类目ID')
