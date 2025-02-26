@@ -478,5 +478,6 @@ class Shelf2Cid(Base):
     __tablename__ = 'ct_shelf2cid_api'
     __table_args__ = {'comment': '对照-货架对应品类群'}
 
+    braid = mapped_column(INTEGER, primary_key=True, nullable=False, comment='门店ID')
     shelf_code = mapped_column(VARCHAR(36), primary_key=True, nullable=False, comment='货架码')
     cid = mapped_column(INTEGER, primary_key=True, nullable=False, comment='类目ID')
